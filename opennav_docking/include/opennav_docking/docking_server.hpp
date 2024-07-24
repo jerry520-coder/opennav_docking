@@ -87,6 +87,13 @@ public:
    * @returns True if dock successfully approached, False if cancelled. For
    *          any internal error, will throw.
    */
+
+  /**
+   * @brief 使用控制律和对接感知接近充电对接站。
+   * @param dock 对接实例，用于查询经过感知细化后的姿态和对接状态。
+   * @param dock_pose 初始对接姿态，将通过感知进行细化。
+   * @returns 如果成功接近对接站，则返回True；如果取消，则返回False。如果出现任何内部错误，将抛出异常。
+   */
   bool approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & dock_pose);
 
   /**

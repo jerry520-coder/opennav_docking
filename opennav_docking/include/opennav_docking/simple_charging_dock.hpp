@@ -81,6 +81,12 @@ public:
    * @param pose The initial estimate of the dock pose.
    * @param frame The frame of the initial estimate.
    */
+
+  /**
+ * @brief 获取码头的精确位姿的方法，通常基于传感器
+ * @param pose 码头位姿的初步估计。
+ * @param frame 初步估计的参考框架。
+ */
   virtual bool getRefinedPose(geometry_msgs::msg::PoseStamped & pose);
 
   /**

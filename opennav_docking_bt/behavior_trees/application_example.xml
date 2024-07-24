@@ -3,6 +3,12 @@
   Shown below is an example of how you could use dock & undock actions in your application.
   
   Shown in the comment below is an example of how you could dock based on battery status as a possible common adaption:
+
+  这个行为树让机器人解除对接，执行一些token application，然后返回到对接点。
+  下面注释中展示的是一个示例，说明如何在您的应用程序中使用对接和解除对接动作。
+
+  注释中展示的示例是，如何基于电池状态来执行对接，这可能是一个可能的常见适应性调整：
+  
   <ReactiveFallback name="DockIfBatteryLow">
     <inverter>
       <IsBatteryLow min_battery="0.2"/>

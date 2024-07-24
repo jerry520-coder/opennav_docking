@@ -168,16 +168,21 @@ geometry_msgs::msg::PoseStamped SimpleChargingDock::getStagingPose(
 
 bool SimpleChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose)
 {
+  // 如果不使用外部检测，设置码头的位姿为静态固定框架版本
   // If using not detection, set the dock pose to the static fixed-frame version
   if (!use_external_detection_pose_) {
+    // 发布码头位姿
     dock_pose_pub_->publish(pose);
+    // 更新码头位姿
     dock_pose_ = pose;
     return true;
   }
 
+  // 如果使用外部检测，获取当前检测结果，转换到指定框架，并应用偏移量
   // If using detections, get current detections, transform to frame, and apply offsets
   geometry_msgs::msg::PoseStamped detected = detected_dock_pose_;
 
+  // 验证外部检测的位姿是否足够新
   // Validate that external pose is new enough
   auto timeout = rclcpp::Duration::from_seconds(external_detection_timeout_);
   if (node_->now() - detected.header.stamp > timeout) {
@@ -185,6 +190,8 @@ bool SimpleChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose)
     return false;
   }
 
+  // 将检测到的位姿转换到固定框架。注意参数 pose 是检测的输出，同时也是初步估计，
+  // 并包含对接的 frame_id
   // Transform detected pose into fixed frame. Note that the argument pose
   // is the output of detection, but also acts as the initial estimate
   // and contains the frame_id of docking
@@ -197,6 +204,7 @@ bool SimpleChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose)
         RCLCPP_WARN(node_->get_logger(), "Failed to transform detected dock pose");
         return false;
       }
+      // 进行坐标转换
       tf2_buffer_->transform(detected, detected, pose.header.frame_id);
     } catch (const tf2::TransformException & ex) {
       RCLCPP_WARN(node_->get_logger(), "Failed to transform detected dock pose");
@@ -204,10 +212,13 @@ bool SimpleChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose)
     }
   }
 
+  // 滤波检测到的位姿
   // Filter the detected pose
   detected = filter_->update(detected);
+  // 发布过滤后的位姿
   filtered_dock_pose_pub_->publish(detected);
 
+  // 仅旋转方向，然后移除滚转/俯仰角
   // Rotate the just the orientation, then remove roll/pitch
   geometry_msgs::msg::PoseStamped just_orientation;
   just_orientation.pose.orientation = tf2::toMsg(external_detection_rotation_);
@@ -219,6 +230,7 @@ bool SimpleChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose)
   orientation.setEuler(0.0, 0.0, tf2::getYaw(just_orientation.pose.orientation));
   dock_pose_.pose.orientation = tf2::toMsg(orientation);
 
+  // 通过应用平移/旋转构造 dock_pose_
   // Construct dock_pose_ by applying translation/rotation
   dock_pose_.header = detected.header;
   dock_pose_.pose.position = detected.pose.position;
@@ -229,6 +241,7 @@ bool SimpleChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose)
     cos(yaw) * external_detection_translation_y_;
   dock_pose_.pose.position.z = 0.0;
 
+  // 发布并返回码头位姿用于调试
   // Publish & return dock pose for debugging purposes
   dock_pose_pub_->publish(dock_pose_);
   pose = dock_pose_;

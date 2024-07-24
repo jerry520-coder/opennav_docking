@@ -198,30 +198,38 @@ bool DockingServer::checkAndWarnIfPreempted(
 
 void DockingServer::dockRobot()
 {
+  // 锁定动态参数互斥量，保证线程安全
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
+  // 记录动作开始时间
   action_start_time_ = this->now();
+  // 根据控制频率设置循环速率
   rclcpp::Rate loop_rate(controller_frequency_);
 
+  // 获取当前目标和初始化结果对象
   auto goal = docking_action_server_->get_current_goal();
   auto result = std::make_shared<DockRobot::Result>();
   result->success = false;
 
+  // 检查动作服务器是否可用和活动
   if (!docking_action_server_ || !docking_action_server_->is_server_active()) {
     RCLCPP_DEBUG(get_logger(), "Action server unavailable or inactive. Stopping.");
     return;
   }
 
+  // 检查并警告是否取消动作
   if (checkAndWarnIfCancelled(docking_action_server_, "dock_robot")) {
     docking_action_server_->terminate_all();
     return;
   }
 
+  // 如果需要抢占目标，获取抢占目标
   getPreemptedGoalIfRequested(goal, docking_action_server_);
   Dock * dock{nullptr};
   num_retries_ = 0;
 
   try {
-    // Get dock (instance and plugin information) from request
+    // 根据请求获取码头实例和插件信息
+     // Get dock (instance and plugin information) from request
     if (goal->use_dock_id) {
       RCLCPP_INFO(
         get_logger(),
@@ -235,6 +243,7 @@ void DockingServer::dockRobot()
       dock = generateGoalDock(goal);
     }
 
+    // 发送机器人到其预定位姿
     // Send robot to its staging pose
     publishDockingFeedback(DockRobot::Feedback::NAV_TO_STAGING_POSE);
     const auto initial_staging_pose = dock->getStagingPose();
@@ -250,20 +259,25 @@ void DockingServer::dockRobot()
       RCLCPP_INFO(get_logger(), "Successful navigation to staging pose");
     }
 
+    // 构建码头在固定帧中的初始位置估计
     // Construct initial estimate of where the dock is located in fixed_frame
     auto dock_pose = utils::getDockPoseStamped(dock, rclcpp::Time(0));
     tf2_buffer_->transform(dock_pose, dock_pose, fixed_frame_);
 
-    // Get initial detection of dock before proceeding to move
+    // 在继续移动前获取码头的初始检测
+     // Get initial detection of dock before proceeding to move
     doInitialPerception(dock, dock_pose);
     RCLCPP_INFO(get_logger(), "Successful initial dock detection");
 
-    // Docking control loop: while not docked, run controller
+    // 停靠控制循环：如果未停靠，运行控制器
+     // Docking control loop: while not docked, run controller
     rclcpp::Time dock_contact_time;
     while (rclcpp::ok()) {
       try {
+        // 使用控制律靠近码头
         // Approach the dock using control law
         if (approachDock(dock, dock_pose)) {
+          // 机器人已停靠，等待充电开始
           // We are docked, wait for charging to begin
           RCLCPP_INFO(get_logger(), "Made contact with dock, waiting for charge to start");
           if (waitForCharge(dock)) {
@@ -277,6 +291,7 @@ void DockingServer::dockRobot()
           }
         }
 
+        // 取消、中止或关闭（可恢复错误抛出DockingException）
         // Cancelled, preempted, or shutting down (recoverable errors throw DockingException)
         stashDockData(goal->use_dock_id, dock, false);
         publishZeroVelocity();
@@ -290,8 +305,10 @@ void DockingServer::dockRobot()
         RCLCPP_WARN(get_logger(), "Docking failed, will retry: %s", e.what());
       }
 
-      // Reset to staging pose to try again
+      // 重置到预定位姿重新尝试
+       // Reset to staging pose to try again
       if (!resetApproach(dock->getStagingPose())) {
+        // 取消、中止或关闭
         // Cancelled, preempted, or shutting down
         stashDockData(goal->use_dock_id, dock, false);
         publishZeroVelocity();
@@ -329,6 +346,7 @@ void DockingServer::dockRobot()
     result->error_code = DockRobot::Result::UNKNOWN;
   }
 
+  // 存储码头状态以供以后解停靠，并删除临时码头（如果适用）
   // Store dock state for later undocking and delete temp dock, if applicable
   stashDockData(goal->use_dock_id, dock, false);
   result->num_retries = num_retries_;
@@ -381,17 +399,25 @@ void DockingServer::doInitialPerception(Dock * dock, geometry_msgs::msg::PoseSta
 
 bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & dock_pose)
 {
+  // 设置控制频率
   rclcpp::Rate loop_rate(controller_frequency_);
+  // 获取当前时间作为开始时间
   auto start = this->now();
+  // 设置超时时间
   auto timeout = rclcpp::Duration::from_seconds(dock_approach_timeout_);
+  
+  // 进入循环，持续尝试靠近充电桩
   while (rclcpp::ok()) {
+    // 发布控制反馈，表示正在控制
     publishDockingFeedback(DockRobot::Feedback::CONTROLLING);
 
+    // 如果已经连接到充电桩或者正在充电，停止并报告成功
     // Stop and report success if connected to dock
     if (dock->plugin->isDocked() || dock->plugin->isCharging()) {
       return true;
     }
 
+    // 如果操作被取消或抢占，停止并报告失败
     // Stop if cancelled/preempted
     if (checkAndWarnIfCancelled(docking_action_server_, "dock_robot") ||
       checkAndWarnIfPreempted(docking_action_server_, "dock_robot"))
@@ -399,40 +425,47 @@ bool DockingServer::approachDock(Dock * dock, geometry_msgs::msg::PoseStamped & 
       return false;
     }
 
+    // 更新感知信息，如果无法获取精确的位置信息，则抛出异常
     // Update perception
     if (!dock->plugin->getRefinedPose(dock_pose)) {
       throw opennav_docking_core::FailedToDetectDock("Failed dock detection");
     }
 
-    // Transform target_pose into base_link frame
+    // 将目标位置变换到 base_link 坐标系中
+     // Transform target_pose into base_link frame
     geometry_msgs::msg::PoseStamped target_pose = dock_pose;
     target_pose.header.stamp = rclcpp::Time(0);
 
+    // 控制算法在接近终点时可能会出现抖动，因此我们将控制目标位置向后投影一段距离
+    // 以确保机器人在接触充电桩前不会到达螺旋轨迹的终点，从而停止对接过程。
     // The control law can get jittery when close to the end when atan2's can explode.
     // Thus, we backward project the controller's target pose a little bit after the
     // dock so that the robot never gets to the end of the spiral before its in contact
     // with the dock to stop the docking procedure.
-    const double backward_projection = 0.25;
-    const double yaw = tf2::getYaw(target_pose.pose.orientation);
-    target_pose.pose.position.x += cos(yaw) * backward_projection;
-    target_pose.pose.position.y += sin(yaw) * backward_projection;
-    tf2_buffer_->transform(target_pose, target_pose, base_frame_);
+    const double backward_projection = 0.25;  // 向后投影的距离
+    const double yaw = tf2::getYaw(target_pose.pose.orientation);  // 获取目标方向的偏航角
+    target_pose.pose.position.x += cos(yaw) * backward_projection;  // 计算新的x位置
+    target_pose.pose.position.y += sin(yaw) * backward_projection;  // 计算新的y位置
+    tf2_buffer_->transform(target_pose, target_pose, base_frame_);  // 变换到 base_link 坐标系
 
-    // Compute and publish controls
+    // 计算并发布控制命令
+     // Compute and publish controls
     geometry_msgs::msg::Twist command;
     if (!controller_->computeVelocityCommand(target_pose.pose, command, dock_backwards_)) {
       throw opennav_docking_core::FailedToControl("Failed to get control");
     }
-    vel_publisher_->publish(command);
+    vel_publisher_->publish(command);  // 发布速度指令
 
+    // 如果超过超时时间，抛出异常
     if (this->now() - start > timeout) {
       throw opennav_docking_core::FailedToControl(
               "Timed out approaching dock; dock nor charging detected");
     }
 
+    // 按照设定的频率休眠
     loop_rate.sleep();
   }
-  return false;
+  return false;  // 如果循环中断，返回失败
 }
 
 bool DockingServer::waitForCharge(Dock * dock)
