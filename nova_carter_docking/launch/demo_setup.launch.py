@@ -34,25 +34,29 @@ def generate_launch_description():
     nova_carter_dock_params_dir = os.path.join(
         get_package_share_directory('nova_carter_docking'), 'params')
 
+  # 获取参数文件路径
     params_file = default_value=os.path.join(nova_carter_dock_params_dir, 'nova_carter_docking.yaml')
 
+  # 包含teleop.launch.py启动文件，并传递一些参数
     robot_base_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(
             carter_navigation_launch_dir, 'teleop.launch.py')),
         launch_arguments={
             'launch_hawks': 'True',      # stereo
             'launch_owls': 'False',      # fisheye
-            'launch_rplidars': 'False',  # 2D
-            'launch_hesai': 'False',     # 3D
-            'launch_segway': 'True'      # base
+            'launch_rplidars': 'False',  # 2D # 2D激光雷达
+            'launch_hesai': 'False',     # 3D # 3D激光雷达
+            'launch_segway': 'True'      # base # 移动底盘
         }.items(),
     )
 
+# 包含isaac_apriltag_detection_pipeline.launch.py启动文件
     dock_detection_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(
             nova_carter_dock_launch_dir, 'isaac_apriltag_detection_pipeline.launch.py'))
     )
 
+ # 启动docking_server节点
     docking_server = Node(
         package='opennav_docking',
         executable='opennav_docking',
@@ -61,6 +65,7 @@ def generate_launch_description():
         parameters=[params_file],
     )
 
+  # 启动lifecycle_manager节点
     lifecycle_manager = Node(
         package='nav2_lifecycle_manager',
         executable='lifecycle_manager',

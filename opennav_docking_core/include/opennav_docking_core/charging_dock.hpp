@@ -73,6 +73,13 @@ public:
    * @param frame Dock's frame of pose
    * @return PoseStamped of staging pose in the specified frame
    */
+
+  /**
+ * @brief 获取充电桩的预设姿态的方法。此方法通常应该使用TF（坐标变换）和充电桩的姿态信息，以从静态或参数化的预设姿态中计算出相对于充电姿态的预设姿态。
+ * @param pose 充电桩姿态
+ * @param frame 充电桩的姿态坐标系
+ * @return 指定坐标系中预设姿态的 PoseStamped 对象
+ */
   virtual geometry_msgs::msg::PoseStamped getStagingPose(
     const geometry_msgs::msg::Pose & pose, const std::string & frame) = 0;
 
@@ -81,6 +88,12 @@ public:
    * @param pose The initial estimate of the dock pose.
    * @param frame The frame of the initial estimate.
    */
+
+  /**
+ * @brief 获取充电底座精确位置的方法，通常基于传感器
+ * @param pose 充电底座位置的初步估计。
+ * @param frame 初步估计的位置框架。
+ */
   virtual bool getRefinedPose(geometry_msgs::msg::PoseStamped & pose) = 0;
 
   /**
@@ -91,6 +104,13 @@ public:
    * NOTE: this function is expected to return QUICKLY. Blocking here will block
    * the docking controller loop.
    */
+
+  /**
+ * @brief 我们与充电底座接触了吗？这可以通过多种方式实现：
+ * 通过与充电底座建立通信，监测驱动电机的工作情况等。
+ *
+ * 注意：此函数预期应快速返回。在此处阻塞将会阻塞对接控制器的循环。
+ */
   virtual bool isDocked() = 0;
 
   /**
@@ -101,6 +121,13 @@ public:
    * NOTE: this function is expected to return QUICKLY. Blocking here will block
    * the docking controller loop.
    */
+
+  /**
+ * @brief 我们正在充电吗？如果充电底座需要进行任何形式的协商以开始充电，
+ * 这些操作应在此函数内进行，因为在对接循环后会反复调用此函数以检查是否成功。
+ *
+ * 注意：此函数预期应快速返回。在此处阻塞将会阻塞对接控制器的循环。
+ */
   virtual bool isCharging() = 0;
 
   /**
@@ -112,11 +139,23 @@ public:
    * NOTE: this function is expected to return QUICKLY. Blocking here will block
    * the docking controller loop.
    */
+
+  /**
+ * @brief 在电流仍在流动时进行脱离操作可能会损坏充电底座，
+ * 因此某些充电底座提供了在机器人物理断开连接之前禁用充电的功能。
+ * 只有当此函数返回true时，脱离操作才会命令机器人移动。
+ *
+ * 注意：此函数预期应快速返回。在此处阻塞将会阻塞对接控制器的循环。
+ */
   virtual bool disableCharging() = 0;
 
   /**
    * @brief Similar to isCharging() but called when undocking.
    */
+
+  /**
+ * @brief 类似于isCharging()，但在脱离操作时调用。
+ */
   virtual bool hasStoppedCharging() = 0;
 
   std::string getName() {return name_;}

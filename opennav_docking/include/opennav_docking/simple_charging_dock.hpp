@@ -73,6 +73,14 @@ public:
    * @param frame Dock's frame of pose
    * @return PoseStamped of staging pose in the specified frame
    */
+
+  /**
+ * @brief 获取对接的预设姿态的方法。此方法可能需要使用 TF 和对接的姿态信息，
+ *        从静态或参数化的预设姿态中找到相对于对接姿态的预设姿态。
+ * @param pose 带有姿态的对接
+ * @param frame 对接姿态的坐标系
+ * @return 指定坐标系中预设姿态的 PoseStamped
+ */
   virtual geometry_msgs::msg::PoseStamped getStagingPose(
     const geometry_msgs::msg::Pose & pose, const std::string & frame);
 

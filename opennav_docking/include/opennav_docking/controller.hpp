@@ -26,7 +26,7 @@ namespace opennav_docking
 {
 /**
  * @class opennav_docking::Controller
- * @brief Default control law for approaching a dock target
+ * @brief Default control law for approaching a dock target 【默认控制率 Default control law 】
  */
 class Controller
 {
@@ -43,6 +43,14 @@ public:
    * @param backward If true, robot will drive backwards to goal.
    * @returns True if command is valid, false otherwise.
    */
+
+  /**
+ * @brief 使用控制定律计算速度命令。
+ * @param pose 目标姿态，以机器人中心坐标系表示。
+ * @param cmd 命令速度。
+ * @param backward 如果为真，机器人将向后行驶到达目标。
+ * @returns 如果命令有效，则返回真，否则返回假。
+ */
   bool computeVelocityCommand(
     const geometry_msgs::msg::Pose & pose, geometry_msgs::msg::Twist & cmd,
     bool backward = false);

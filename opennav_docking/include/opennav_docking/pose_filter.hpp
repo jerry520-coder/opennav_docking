@@ -33,6 +33,12 @@ public:
    * @param coef Filtering coefficient. Valid range is 0-1, where 0 means take the new measurement
    * @param timeout If time between measurments exceeds this value, take the new measurement.
    */
+
+  /**
+ * @brief 创建一个姿态滤波器实例。
+ * @param coef 滤波系数。有效范围是 0 到 1，其中 0 表示取最新的测量值。
+ * @param timeout 如果测量之间的时间超过此值，则取最新的测量值。
+ */
   PoseFilter(double coef, double timeout);
 
   /**

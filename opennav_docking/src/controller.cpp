@@ -50,6 +50,7 @@ Controller::Controller(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node)
   node->get_parameter("controller.v_linear_max", v_linear_max);
   node->get_parameter("controller.v_angular_max", v_angular_max);
   node->get_parameter("controller.slowdown_radius", slowdown_radius);
+  
   control_law_ = std::make_unique<nav2_graceful_controller::SmoothControlLaw>(
     k_phi, k_delta, beta, lambda, slowdown_radius, v_linear_min, v_linear_max, v_angular_max);
 }

@@ -58,6 +58,10 @@ public:
    * @brief Called at the conclusion of docking actions. Saves relevant
    *        docking data for later undocking action.
    */
+
+  /**
+ * @brief 在对接动作结束时调用。保存相关的对接数据以供稍后的撤离动作使用。
+ */
   void stashDockData(bool use_dock_id, Dock * dock, bool successful);
 
   /**
@@ -78,6 +82,12 @@ public:
    * @param dock Dock instance, gets queried for refined pose.
    * @param dock_pose Initial dock pose, will be refined by perception.
    */
+
+  /**
+ * @brief 执行初始感知，直到超时为止。
+ * @param dock 充电桩实例，用于获取精确的姿态。
+ * @param dock_pose 初始充电桩姿态，将通过感知进行精确调整。
+ */
   void doInitialPerception(Dock * dock, geometry_msgs::msg::PoseStamped & dock_pose);
 
   /**
@@ -101,13 +111,25 @@ public:
    * @param dock Dock instance, used to query isCharging().
    * @returns True if charging successfully started within alloted time.
    */
+
+  /**
+ * @brief 等待充电开始。
+ * @param dock Dock 实例，用于查询 isCharging() 状态。
+ * @returns 如果在规定时间内充电成功开始，则返回 true。
+ */
   bool waitForCharge(Dock * dock);
 
   /**
-   * @brief Reset the robot for another approach by controlling back to staging pose.
+   * @brief Reset the robot for another approach by controlling back to staging pose. 预设位置
    * @param staging_pose The target pose that will reset for another approach.
    * @returns True if reset is successful.
    */
+
+  /**
+ * @brief 通过控制机器人返回到预设位置来重置机器人以进行另一次接近操作。
+ * @param staging_pose 目标姿态，用于重置机器人以进行另一次接近操作。
+ * @returns 如果重置成功，返回 true。
+ */
   bool resetApproach(const geometry_msgs::msg::PoseStamped & staging_pose);
 
   /**

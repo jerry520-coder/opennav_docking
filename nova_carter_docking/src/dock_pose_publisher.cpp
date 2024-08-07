@@ -28,13 +28,14 @@ class DockPosePublisher : public rclcpp::Node
     {
       subscription_ = this->create_subscription<isaac_ros_apriltag_interfaces::msg::AprilTagDetectionArray>(
       "tag_detections", 10, std::bind(&DockPosePublisher::detectionCallback, this, _1));
+
       publisher_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("detected_dock_pose", 10);
       
-      // If you don't expect multiple detections in a scene, use the only apriltag
+      // If you don't expect multiple detections in a scene, use the only apriltag // 如果场景中不期望有多个检测结果，则使用第一个检测结果，默认值为 true
       use_first_detection_ = this->declare_parameter("use_first_detection", true);
 
-      // If you expect multiple detections in a scene, specify which you want to use
-      // (default here is included in media/ directory)
+      // If you expect multiple detections in a scene, specify which you want to use// 如果场景中期望有多个检测结果，指定需要使用的检测结果的标签族和标签 ID
+      // (default here is included in media/ directory) // 这里默认值为 tag36h11 和 585
       dock_tag_family_ = this->declare_parameter("dock_tag_family", "tag36h11");
       dock_tag_id_ = this->declare_parameter("dock_tag_id", 585);
     }
@@ -44,15 +45,18 @@ class DockPosePublisher : public rclcpp::Node
     {
       geometry_msgs::msg::PoseStamped p;
       for (unsigned int i = 0; i != msg->detections.size(); i++) {
+         // 如果不使用第一个检测结果
         if (!use_first_detection_) {
+            // 检查当前检测结果的标签族和标签 ID 是否匹配
           if (msg->detections[i].family == dock_tag_family_ && msg->detections[i].id == dock_tag_id_) {
+              // 如果匹配，则获取检测结果的姿态并发布
             p.header = msg->header;
             p.pose = msg->detections[i].pose.pose.pose;
             publisher_->publish(p);
             return;
           }
         } else {
-          // Use the first detection found
+          // Use the first detection found // 使用第一个检测结果
           p.header = msg->header;
           p.pose = msg->detections[0].pose.pose.pose;
           publisher_->publish(p);
@@ -61,8 +65,8 @@ class DockPosePublisher : public rclcpp::Node
       }
     }
 
-    std::string dock_tag_family_;
-    int dock_tag_id_;
+    std::string dock_tag_family_;// 标签族
+    int dock_tag_id_;// 标签 ID
     bool use_first_detection_;
     rclcpp::Subscription<isaac_ros_apriltag_interfaces::msg::AprilTagDetectionArray>::SharedPtr subscription_;
     rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr publisher_;

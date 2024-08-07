@@ -35,6 +35,11 @@ namespace opennav_docking
  * @class opennav_docking::Navigator
  * @brief An object the call navigation to obtain initial staging pose
  */
+
+/**
+ * @class opennav_docking::Navigator
+ * @brief 一个用于调用导航以获取初始预设位置的对象
+ */
 class Navigator
 {
 public:
@@ -69,6 +74,14 @@ public:
    * @param pose Pose to go to
    * @param max_staging_duration Maximum time to get to the staging pose
    */
+
+  /**
+ * @brief 一个方法，用于前往特定的位置。
+ * 如果导航或通信失败，可能会抛出异常。
+ * 阻塞直到完成。
+ * @param pose 要前往的位置
+ * @param max_staging_duration 到达预设位置的最大时间
+ */
   void goToPose(
     const geometry_msgs::msg::PoseStamped & pose,
     const rclcpp::Duration & max_staging_duration,

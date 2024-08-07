@@ -50,6 +50,13 @@ public:
    * @param tf TF buffer
    * @return If successful
    */
+
+  /**
+ * @brief 一个用于填充数据库的设置函数
+ * @param parent 指向节点的弱指针，用于获取实例和参数
+ * @param tf TF缓冲区
+ * @return 是否成功
+ */
   bool initialize(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent, std::shared_ptr<tf2_ros::Buffer> tf);
 
@@ -73,6 +80,12 @@ public:
    * @param dock_id Id of dock to find
    * @return Dock pointer
    */
+
+  /**
+ * @brief 从ID中查找数据库中的对接实例和插件
+ * @param dock_id 要查找的对接ID
+ * @return Dock 指针
+ */
   Dock * findDock(const std::string & dock_id);
 
   /**
@@ -80,18 +93,34 @@ public:
    * @param type Dock type to find plugin for
    * @return Dock plugin pointer
    */
+
+  /**
+ * @brief 查找用于给定类型的对接插件
+ * @param type 要查找插件的对接类型
+ * @return 对接插件指针
+ */
   ChargingDock::Ptr findDockPlugin(const std::string & type);
 
   /**
    * @brief Get the number of docks in the database
    * @return unsigned int Number of dock instances in the database
    */
+
+  /**
+ * @brief 获取数据库中的对接数量
+ * @return unsigned int 数据库中的对接实例数量
+ */
   unsigned int instance_size() const;
 
   /**
    * @brief Get the number of dock types in the database
    * @return unsigned int Number of dock types in the database
    */
+
+  /**
+ * @brief 获取数据库中的对接类型数量
+ * @return unsigned int 数据库中的对接类型数量
+ */
   unsigned int plugin_size() const;
 
 protected:
@@ -101,6 +130,13 @@ protected:
    * @param tf TF buffer
    * @return bool If successful
    */
+
+  /**
+ * @brief 填充对接类型插件的数据库
+ * @param Node 用于获取值的节点
+ * @param tf TF缓冲区
+ * @return bool 是否成功
+ */
   bool getDockPlugins(
     const rclcpp_lifecycle::LifecycleNode::SharedPtr & node, std::shared_ptr<tf2_ros::Buffer> tf);
 
@@ -122,6 +158,12 @@ protected:
    * @param request Service request
    * @param response Service response
    */
+
+  /**
+ * @brief 服务请求，重新加载对接数据库
+ * @param request 服务请求
+ * @param response 服务响应
+ */
   void reloadDbCb(
     const std::shared_ptr<opennav_docking_msgs::srv::ReloadDatabase::Request> request,
     std::shared_ptr<opennav_docking_msgs::srv::ReloadDatabase::Response> response);

@@ -21,6 +21,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
 
+    # 创建一个可组合节点，用于图像矫正
     rectify_node = ComposableNode(
         name='rectify_node',
         package='isaac_ros_image_proc',
@@ -30,25 +31,27 @@ def generate_launch_description():
             'output_height': 1200,
         }],
         remappings=[
-            ('image_raw', '/hawk_front/left/image_raw'),
-            ('camera_info', '/hawk_front/left/camerainfo'),
-            ('image_rect', '/hawk_front/left/image_rect'),
-            ('camera_info_rect', '/hawk_front/left/camera_info_rect')
+            ('image_raw', '/hawk_front/left/image_raw'),# 原始图像话题
+            ('camera_info', '/hawk_front/left/camerainfo'),# 相机信息话题
+            ('image_rect', '/hawk_front/left/image_rect'),# 矫正后的图像话题
+            ('camera_info_rect', '/hawk_front/left/camera_info_rect')# 矫正后的相机信息话题
         ]
     )
 
+    # 创建一个可组合节点，用于AprilTag检测
     apriltag_node = ComposableNode(
         package='isaac_ros_apriltag',
         plugin='nvidia::isaac_ros::apriltag::AprilTagNode',
         name='apriltag',
         remappings=[
-            ('image', '/hawk_front/left/image_rect'),        # /owl_front/left/image_raw
-            ('camera_info', '/hawk_front/left/camera_info_rect')  # /owl_front/left/camerainfo
+            ('image', '/hawk_front/left/image_rect'),        # /owl_front/left/image_raw # 矫正后的图像话题
+            ('camera_info', '/hawk_front/left/camera_info_rect')  # /owl_front/left/camerainfo # 矫正后的相机信息话题
         ],
-        parameters=[{'size': 0.1524,  # 6 inches
-                     'max_tags': 4,
-                     'tile_size': 4}])
+        parameters=[{'size': 0.1524,  # 6 inches # AprilTag的大小（6英寸）
+                     'max_tags': 4, # 最大检测标签数量
+                     'tile_size': 4}]) # AprilTag检测算法的tile大小
 
+    # 创建一个组合节点容器，用于运行可组合节点
     apriltag_container = ComposableNodeContainer(
         package='rclcpp_components',
         name='apriltag_container',
@@ -61,6 +64,7 @@ def generate_launch_description():
         output='screen'
     )
 
+# 创建一个节点，用于发布对接位姿
     dock_pose_publisher = Node(
         package='nova_carter_docking',
         executable='dock_pose_publisher',

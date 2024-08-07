@@ -29,10 +29,11 @@
 namespace utils
 {
 
-using rclcpp::ParameterType::PARAMETER_STRING;
-using rclcpp::ParameterType::PARAMETER_STRING_ARRAY;
-using rclcpp::ParameterType::PARAMETER_DOUBLE_ARRAY;
-using nav2_util::geometry_utils::orientationAroundZAxis;
+using rclcpp::ParameterType::PARAMETER_STRING;       // 引入表示字符串类型的参数
+using rclcpp::ParameterType::PARAMETER_STRING_ARRAY; // 引入表示字符串数组类型的参数
+using rclcpp::ParameterType::PARAMETER_DOUBLE_ARRAY; // 引入表示双精度浮点数组类型的参数
+using nav2_util::geometry_utils::orientationAroundZAxis; // 引入处理围绕 Z 轴方向的函数或变量
+
 
 /**
 * @brief Parse a yaml file to obtain docks
@@ -40,6 +41,13 @@ using nav2_util::geometry_utils::orientationAroundZAxis;
 * @param node Node to use for logging
 * @param dock_db Database to populate
 */
+
+/**
+ * @brief 解析 YAML 文件以获取对接信息
+ * @param yaml_file 包含对接信息的 YAML 文件路径
+ * @param node 用于日志记录的节点
+ * @param dock_db 要填充的数据库
+ */
 inline bool parseDockFile(
   const std::string & yaml_filepath,
   const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
@@ -108,6 +116,13 @@ inline bool parseDockFile(
 * @param node Node to use for logging & getting parameters
 * @param dock_db Database to populate
 */
+
+/**
+ * @brief 解析参数文件以获取对接信息
+ * @param docks_param 要解析的对接参数命名空间
+ * @param node 用于日志记录和获取参数的节点
+ * @param dock_db 要填充的数据库
+ */
 inline bool parseDockParams(
   const std::vector<std::string> & docks_param,
   const rclcpp_lifecycle::LifecycleNode::SharedPtr & node,
@@ -153,6 +168,13 @@ inline bool parseDockParams(
 * @param t Time for stamping
 * @return PoseStamped of dock pose at time t
 */
+
+/**
+ * @brief 将 dock 转换为带时间戳的位姿消息
+ * @param dock 要转换的 Dock
+ * @param t 时间戳
+ * @return 指定时间 t 的 dock 位姿的 PoseStamped
+ */
 inline geometry_msgs::msg::PoseStamped getDockPoseStamped(
   const Dock * dock, const rclcpp::Time & t)
 {
@@ -163,11 +185,17 @@ inline geometry_msgs::msg::PoseStamped getDockPoseStamped(
   return pose;
 }
 
+/**
+ * @brief 计算两个几何姿态之间的 L2 范数（欧几里得距离）
+ * @param a 第一个姿态
+ * @param b 第二个姿态
+ * @return 计算出的 L2 范数
+ */
 inline double l2Norm(const geometry_msgs::msg::Pose & a, const geometry_msgs::msg::Pose & b)
 {
   double angle_a = tf2::getYaw(a.orientation);
   double angle_b = tf2::getYaw(b.orientation);
-  double delta_angle = angles::shortest_angular_distance(angle_a, angle_b);
+  double delta_angle = angles::shortest_angular_distance(angle_a, angle_b); // 计算姿态 a 和 b 之间的角度差（使用最短角度距离）
   return sqrt(
     (a.position.x - b.position.x) * (a.position.x - b.position.x) +
     (a.position.y - b.position.y) * (a.position.y - b.position.y) +
